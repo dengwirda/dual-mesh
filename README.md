@@ -1,4 +1,5 @@
 dual-mesh
 =========
 
-Generalised dual mesh construction
+A set of MATLAB routines to construct generalised dual mesh-
+es given 2-simplex triangulations embedded in R^3.

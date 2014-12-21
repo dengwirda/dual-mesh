@@ -15,10 +15,10 @@ function [cp,ce,pv,ev] = makedual2(pp,tt,varargin)
 %
 %   [...] = MAKEDUAL2(PP,TT,EC) imposes an additional set of 
 %   edge constraints EC = [PI,PJ], ensuring that dual cells
-%   are split about such edges. Implicit edge constraints 
-%   are also applied in addition to EC, including any 
-%   topologically or geometrically non-manifold edges in the
-%   underlying triangulation.
+%   are split about such edges. Additional implicit edge co-
+%   nstraints are also applied, and include any topological-
+%   ly or geometrically non-manifold edges in the underlying 
+%   triangulation.
 %
 %   [...] = MAKEDUAL2(PP,TT,EC,OP) passes an additional user
 %   -defined options structure. OP.ATOL = COS(THETA), where
@@ -35,12 +35,12 @@ function [cp,ce,pv,ev] = makedual2(pp,tt,varargin)
 %   obtained for any conforming triangulation, even those 
 %   that are non-Delaunay. Specifically, each cell CI is gu-
 %   aranteed to be "star-shaped" w.r.t. its associated prim-
-%   al node PP(CP(CI,1),:). The dual complex is equal to the 
-%   Voronoi diagram when the underlying triangulation is 
-%   "well-centred", that is, when each simplex contains its 
-%   own circumcentre. While the "generalised" dual complex
-%   does not always guarantee the same orthogonality condit-
-%   ions as Voronoi-based methods, it is significantly more 
+%   al node PP(CP(CI,1),:). The dual complex is equivalent 
+%   to the Voronoi diagram when the underlying triangulation 
+%   is "well-centred", that is, when each simplex contains 
+%   its own circumcentre. While the "generalised" dual comp-
+%   lex does not always satisfy the same orthogonality cond-
+%   itions as Voronoi-based duals, it is significantly more 
 %   robust.
 %
 %   See also DEMODUAL2, DRAWDUAL2, GEOMDUAL2, TRIADUAL2
@@ -49,69 +49,88 @@ function [cp,ce,pv,ev] = makedual2(pp,tt,varargin)
 %   (Voronoi), (ii) centres of min-enclosing balls, or (iii)
 %   edge mid-points. Type (i) vertices are prefered, and are 
 %   used when they lie within the hull of their associated
-%   simplex. Type (ii) vertices are used otherwise. Additio-
-%   nal type (iii) vertices are added only when necessary to
-%   ensure that each cell is star-shaped w.r.t. its primal
-%   vertex. Dual cells are not guaranteed to be convex as a
-%   result, though they almost always are in practice. A 
-%   valid, conforming and non-intersecting dual complex is 
-%   guaranteed given any valid, conforming and non-intersec-
-%   ting input triangulation, even those that are very low-
-%   quality and/or non-Delaunay. The conventional "clipped"
-%   Voronoi diagram is recovered as triangulation quality
-%   improves. Dual cells are "clipped" about non-manifold or
-%   constrained edges.
+%   simplex. Type (ii) vertices are used otherwise, ensuring
+%   that a valid, non-intersecting complex isgenerated for 
+%   non-Delaunay triangulations. Additional type (iii) vert-
+%   ices are added only when necessary to ensure that each 
+%   cell is star-shaped w.r.t. its primal vertex. Dual cells 
+%   are not guaranteed to be convex as a result, though they 
+%   almost always are in practice. A valid, conforming and 
+%   non-intersecting dual complex is guaranteed given any 
+%   valid, conforming and non-intersecting input triangulat-
+%   ion, even those incorporating very low-quality and/or 
+%   non-Delaunay elements. The conventional "clipped" Voron-
+%   oi diagram is recovered as triangulation quality improv-
+%   es, and is recovered exactly when the triangulation is
+%   "well-centred". Dual cells are "clipped" about non-mani-
+%   fold or constrained edges.
 
 %   Darren Engwirda : 2014 --
 %   Email           : engwirda@mit.edu
-%   Last updated    : 29/11/2014
+%   Last updated    : 17/12/2014
 
-%----------------------------------- basic dimensions checks
+%----------------------------------- extract optional inputs
+    ec = []; op = [];
     if (nargin < +2 || nargin > +4)
         error('makedual:incorrectNumInputs','Incorrect number of inputs. ');
     end
+    if (nargin >= +3), ec = varargin{1}; end
+    if (nargin >= +4), op = varargin{2}; end
+%---------------------------------------------- basic checks    
+    if (~isfloat(pp) || ...
+       (~isempty(tt) && ~isnumeric(tt)) || ...
+       (~isempty(ec) && ~isnumeric(ec)) || ...
+       (~isempty(op) && ~isstruct(op))) 
+        error('makedual:incorrectInputClass','Incorrect input class.') ;
+    end
+%---------------------------------------------- basic checks
     if (ndims(pp) ~= +2 || size(pp,2) < +2 || size(pp,2) > +3)
         error('makedual:incorrectDimensions','Incorrect input dimensions.');
     end
     if (ndims(tt) ~= +2 || size(tt,2) ~= +3)
         error('makedual:incorrectDimensions','Incorrect input dimensions.');
     end
+    if (~isempty(ec))
+    if (ndims(ec) ~= +2 || size(ec,2) ~= +2)
+        error('makedual:incorrectDimensions','Incorrect input dimensions.');
+    end
+    end
 %------------------ lift R^2 inputs onto the xy-plane in R^3
     if (size(pp,2) == +2)
         pp = [pp, zeros(size(pp,1),1)] ;
     end
-%----------------------------------- extract optional inputs
-    ec = []; op = [];
-    if (nargin >= +3), ec = varargin{1}; end
-    if (nargin >= +4), op = varargin{2}; end
 %---------------------------- deal with user-defined options
     if (~isstruct(op))
         op.etol = +1.e-008;
         op.atol = +1./+2. ;
     else
     %--------------------------------- bound merge tolerance
-        if (isfield(op,'etol'))
-            if (op.etol < +.0 || op.etol > +1.)
-                error('makedual:invalidInputs','Invalid options.');
-            end
+    if (isfield(op,'etol'))
+        if (op.etol < +.0 || op.etol > +1.)
+            error('makedual:invalidInputs','Invalid options.');
         end
+    else
+        op.etol = +1.e-008;
+    end
     %--------------------------------- bound angle tolerance
-        if (isfield(op,'atol'))
-            if (op.atol < -1. || op.atol > +1.)
-                error('makedual:invalidInputs','Invalid options.');
-            end
+    if (isfield(op,'atol'))
+        if (op.atol < -1. || op.atol > +1.)
+            error('makedual:invalidInputs','Invalid options.');
         end
+    else
+        op.atol = +1./+2. ;
+    end
     end
 %---------------------------------- check for valid indexing
     if (~isempty(tt))
-        if (min(min(tt)) < +1 || max(max(tt)) > size(pp,1))
-            error('makedual:invalidTopology','Invalid triangulation. ');
-        end
+    if ( min(min(tt)) < +1 || max(max(tt)) > size(pp,1))
+        error('makedual:invalidTopology','Invalid triangulation. ');
+    end
     end
     if (~isempty(ec))
-        if (min(min(ec)) < +1 || max(max(ec)) > size(pp,1))
-            error('makedual:invalidTopology','Invalid constraint set.');
-        end
+    if ( min(min(ec)) < +1 || max(max(ec)) > size(pp,1))
+        error('makedual:invalidTopology','Invalid constraint set.');
+    end
     end
  
     [np] = size(pp,1);
@@ -144,7 +163,11 @@ function [ke] = markedge(ee,ep,et,ec,pp,tt,op)
 %% mark any constrained/non-manifold edges in tria
 
 %------------------------------------ mark constrained edges
-    ke = ismember(ee,sort(ec,2),'rows') ;
+    if (~isempty(ec))
+        ke = ismember(ee,sort(ec,2),'rows') ;
+    else
+        ke = zeros(size(ee,1),1);
+    end
 %------------------------------------ find nonmanifold edges
     for ei = 1 : size(ee,1)
     %-------------------------------------------- adj. nodes
@@ -208,11 +231,11 @@ function [ke] = markedge(ee,ep,et,ec,pp,tt,op)
             aa = aa / sqrt(l1*l2) ;
         %------------------ geometrically non-manifold edges
             if (aa < op.atol)
-            ke(ei) = +3 ; 
+            ke(ei) = +3; 
             end     
         %------------------ _topologically non-maifold edges
         else
-            ke(ei) = +2 ;
+            ke(ei) = +2;
         end
     end 
 
@@ -399,7 +422,7 @@ function [pv,ev] = healnode(pv,ev,np)
 %% remove un-referenced nodes from set and re-index.
 
 %------------------------------------- mark referenced nodes
-    ki = zeros(size(pv,1),1) ;
+    ki = zeros(size(pv,1),+1);
     ki(+1:np) = +1;
     ki(ev(:,1:2)) = +1;
 %------------------------------------- keep referenced nodes
@@ -493,3 +516,4 @@ function [cp,ce] = clipcell(ev)
     ce = ce(1:ne-1,:) ;
     
 end
+

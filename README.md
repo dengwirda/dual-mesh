@@ -7,6 +7,6 @@ DUALMESH is a toolbox of mesh processing routines that allow the construction of
 
 DUALMESH makes use of a "generalised" dual-mesh that guarantees dual cells are "star-shaped" w.r.t. their associated generating vertices, even when mesh quality is very low. The generalised dual-mesh is equivalent to the conventional Voronoi diagram when the input is a so-called "well-centred" Delaunay triangulation. 
 
-Dual-meshes are useful for a variety of numerical methods, and are often used as a basis for unstructured finite-volume or discontinuous galerkin finite element formulations. 
+Dual-meshes are useful for a variety of numerical methods, and are often used as a basis for unstructured finite-volume or discontinuous Galerkin finite-element formulations. 
 
 See DEMODUAL2, MAKEDUAL2 for additional information.

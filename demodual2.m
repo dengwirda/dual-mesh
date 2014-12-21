@@ -9,7 +9,7 @@ function demodual2(id)
 
 %   Darren Engwirda : 2014 --
 %   Email           : engwirda@mit.edu
-%   Last updated    : 29/11/2014
+%   Last updated    : 21/12/2014
 
 %------------------------------------------------- call demo
     switch (id)
@@ -19,27 +19,37 @@ function demodual2(id)
         case 4, demo4;
         case 5, demo5;
         otherwise
-        error('demodual:invalidInput','Invalid demo selection.');
+    error('demodual:invalidInput','Invalid demo selection.');
     end
 
 end
 
 function demo1
 %-----------------------------------------------------------
-    fprintf(1,...
-'   Given a triangulation, MAKEDUAL2 returns a conforming  \n');
-    fprintf(1,...
-'   "dual complex" -- a polygonal mesh that is a local geo-\n');
-    fprintf(1,...
-'   metric dual of the underlying triangulation. Such mesh-\n');
-    fprintf(1,...
-'   es are useful for a variety of numerical techniques,   \n');
-    fprintf(1,...
-'   including the finite-volume method. \n') ;
+    fprintf(1,[...
+'   Given a triangulation, MAKEDUAL2 returns a conforming  \n'...
+'   "dual complex" -- a polygonal mesh that is a local geo-\n'...
+'   metric dual of the underlying triangulation. Such mesh-\n'...
+'   es are useful for a variety of numerical techniques,   \n'...
+'   including the finite-volume method. \n\n']) ;
  
-    load airfoil;
-
-    [cp,ce,pv,ev] = makedual2(pp,tt);
+    ffid = fopen('test/airfoil.node_2d','r');
+    data = fscanf(ffid,'%e,%e,%i \r\n');
+    fclose(ffid);
+    
+    pp = [data(1:3:end), ...
+          data(2:3:end)] ;
+      
+    ffid = fopen('test/airfoil.tria_2d','r');
+    data = fscanf(ffid,'%u,%u,%u,%u \r\n');
+    fclose(ffid);
+    
+    tt = [data(1:4:end), ...
+          data(2:4:end), ...
+          data(3:4:end)] ;
+    tt = tt+1;
+    
+   [cp,ce,pv,ev] = makedual2(pp,tt);
 
     figure;
     subplot(1,2,1); hold on;
@@ -57,16 +67,31 @@ end
 
 function demo2
 %-----------------------------------------------------------
-    fprintf(1,...
-'   MAKEDUAL2 also operates on surface triangulations, pro- \n');
-    fprintf(1,...
-'   ducing dual complexes that are restricted to the under- \n');
-    fprintf(1,...
-'   lying triangulated surface. \n');
+    fprintf(1,[...
+'   MAKEDUAL2 also operates on surface triangulations, pro- \n'...
+'   ducing dual complexes that are restricted to the under- \n'...
+'   lying triangulated surface. \n\n']);
  
-    load bunny;
+    ffid = fopen('test/bunny.node_3d','r');
+    data = fscanf(ffid,'%e,%e,%e,%i,%e \r\n');
+    fclose(ffid);
+    
+    pp = [data(1:5:end), ...
+          data(2:5:end), ...
+          data(3:5:end)] ;
+      
+    pp = pp(:,[1,3,2]) ;
+      
+    ffid = fopen('test/bunny.tria_3d','r');
+    data = fscanf(ffid,'%u,%u,%u,%i \r\n');
+    fclose(ffid);
+    
+    tt = [data(1:4:end), ...
+          data(2:4:end), ...
+          data(3:4:end)] ;
+    tt = tt+1;
 
-    [cp,ce,pv,ev] = makedual2(pp,tt);
+   [cp,ce,pv,ev] = makedual2(pp,tt);
 
     figure;
     subplot(1,2,1); hold on;
@@ -86,22 +111,32 @@ end
 
 function demo3
 %-----------------------------------------------------------
-    fprintf(1,...
-'   Rather than simply computing a variant of the Voronoi   \n');
-    fprintf(1,...
-'   diagram, MAKEDUAL2 uses a "generalised" dual mesh, lea- \n');
-    fprintf(1,...
-'   ding to a valid, conforming and non-intersecting dual   \n');
-    fprintf(1,...
-'   complex, even when the underlying triangulation is not  \n');
-    fprintf(1,...
-'   Delaunay. Such behaviour facilitates robust computatio- \n');
-    fprintf(1,...
-'   ns on highly aniostropic triangulations. \n');
+    fprintf(1,[...
+'   Rather than simply computing a variant of the Voronoi   \n'...
+'   diagram, MAKEDUAL2 uses a "generalised" dual mesh, lea- \n'...
+'   ding to a valid, conforming and non-intersecting dual   \n'...
+'   complex, even when the underlying triangulation is not  \n'...
+'   Delaunay. Such behaviour facilitates robust computatio- \n'...
+'   ns on highly aniostropic triangulations. \n\n']);
 
-    load woodthinker;
+    ffid = fopen('test/wood.node_3d','r');
+    data = fscanf(ffid,'%e,%e,%e,%i,%e \r\n');
+    fclose(ffid);
+    
+    pp = [data(1:5:end), ...
+          data(2:5:end), ...
+          data(3:5:end)] ;
+      
+    ffid = fopen('test/wood.tria_3d','r');
+    data = fscanf(ffid,'%u,%u,%u,%i \r\n');
+    fclose(ffid);
+    
+    tt = [data(1:4:end), ...
+          data(2:4:end), ...
+          data(3:4:end)] ;
+    tt = tt+1;
 
-    [cp,ce,pv,ev] = makedual2(pp,tt);
+   [cp,ce,pv,ev] = makedual2(pp,tt);
 
     figure;
     subplot(1,2,1); hold on;
@@ -121,15 +156,27 @@ end
 
 function demo4
 %-----------------------------------------------------------
-    fprintf(1,...
-'   MAKEDUAL2 also produces valid dual meshes for non-mani- \n');
-    fprintf(1,...
-'   fold geometry, splitting dual cells about non-manifold  \n');
-    fprintf(1,...
-'   features. \n');
+    fprintf(1,[...
+'   MAKEDUAL2 also produces valid dual meshes for non-mani- \n'...
+'   fold geometry, splitting dual cells about non-manifold  \n'...
+'   features. \n\n']);
 
-    load minimale;
-
+    ffid = fopen('test/minimale.node_3d','r');
+    data = fscanf(ffid,'%e,%e,%e \r\n');
+    fclose(ffid);
+    
+    pp = [data(1:3:end), ...
+          data(2:3:end), ...
+          data(3:3:end)] ;
+      
+    ffid = fopen('test/minimale.tria_3d','r');
+    data = fscanf(ffid,'%u,%u,%u \r\n');
+    fclose(ffid);
+    
+    tt = [data(1:3:end), ...
+          data(2:3:end), ...
+          data(3:3:end)] ;
+      
     [cp,ce,pv,ev] = makedual2(pp,tt);
 
     figure;
@@ -150,20 +197,31 @@ end
 
 function demo5
 %-----------------------------------------------------------
-    fprintf(1,...
-'   MAKEDUAL2 is guaranteed to generate "star-shaped" dual  \n');
-    fprintf(1,...
-'   cells, facilitating robust and straightforward computa- \n');
-    fprintf(1,...
-'   tion of geometric properties, such as cell barycentres  \n');
-    fprintf(1,...
-'   and surface areas. \n');
+    fprintf(1,[...
+'   MAKEDUAL2 is guaranteed to generate "star-shaped" dual  \n'...
+'   cells, facilitating robust and straightforward computa- \n'...
+'   tion of geometric properties, such as cell barycentres  \n'...
+'   and surface areas. \n\n']);
 
-    load bimba;
+    ffid = fopen('test/lake.node_2d','r');
+    data = fscanf(ffid,'%e,%e,%i \r\n');
+    fclose(ffid);
+    
+    pp = [data(1:3:end), ...
+          data(2:3:end)] ;
+      
+    ffid = fopen('test/lake.tria_2d','r');
+    data = fscanf(ffid,'%u,%u,%u,%u \r\n');
+    fclose(ffid);
+    
+    tt = [data(1:4:end), ...
+          data(2:4:end), ...
+          data(3:4:end)] ;
+    tt = tt+1;
 
-    [cp,ce,pv,ev] = makedual2(pp,tt);
+   [cp,ce,pv,ev] = makedual2(pp,tt);
 
-    [pc,ac] = geomdual2(cp,ce,pv,ev);
+   [pc,ac] = geomdual2(cp,ce,pv,ev);
     
     figure;
     subplot(1,2,1); hold on;
@@ -179,3 +237,4 @@ function demo5
     axis image off;
     
 end
+

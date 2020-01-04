@@ -11,7 +11,7 @@ function [ee,te,ep,et] = triaconn2(tt)
 %   EP(EI,2)). TT may be topologically non-manifold.
 
 %   Darren Engwirda : 2014 --
-%   Email           : engwirda@mit.edu
+%   Email           : darren.engwirda@columbia.edu
 %   Last updated    : 11/12/2014
 
     if (ndims(tt) ~= +2 || size(tt,2) ~= +3)
@@ -22,13 +22,16 @@ function [ee,te,ep,et] = triaconn2(tt)
     end
 
     nt = size(tt,1);
+
 %------------------------------------------ non-unique edges
     ee = zeros(nt*3,2);
     ee((1:nt)+nt*0,:) = tt(:,[1,2]);
     ee((1:nt)+nt*1,:) = tt(:,[2,3]);
     ee((1:nt)+nt*2,:) = tt(:,[3,1]);
+
 %------------------------------ unique edges and re-indexing
    [ee, iv, jv] = unique(sort(ee,2), 'rows');
+
 %------------------- tria-to-edge indexing: 3 edges per tria
     te = zeros(nt*1,3);
     te(:,1) = jv((1:nt)+nt*0);
@@ -43,9 +46,11 @@ function [ee,te,ep,et] = triaconn2(tt)
 %-------------------------------------- count trias per edge
     ep(:,1) = +1;
     ep(:,2) = accumarray(te(:),+1);
+
 %-------------------------------------- init sparse indexing
     ep(:,2) = cumsum(double(ep(:,2))); %%!! no CUMSUM support for int
     ep(2:ne-0,1) = ep(1:ne-1,2)+1 ;
+
 %---------------------------- assemble edge-to-tria indexing
     et = zeros(ep(ne,+2),+1); tp = ep(:,1);
     for ti = 1 : nt
@@ -60,4 +65,6 @@ function [ee,te,ep,et] = triaconn2(tt)
     end
     
 end
+
+
 

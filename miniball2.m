@@ -1,17 +1,18 @@
-function cc = miniball2(pp,tt)
+function cc = miniball2(pp,pw,tt)
 %MINIBALL2 compute the min-enclosing balls associated with a 
 %2-simplex triangulation embedded in R^3.
-%   [CC] = MINIBALL2(PP,TT) returns the smallest enclosing 
-%   balls associated with the triangles in [PP,TT], such th-
-%   at CC = [XC,YC,ZC,RC*RC]. Such balls never lie outside 
-%   the hull of their associated 2-simplexes.
+%   [CC] = MINIBALL2(PP,PW,TT) returns the smallest enclosi-
+%   ng balls associated with the (weighted) triangulation 
+%   [PP,PW,TT], such that CC = [XC,YC,ZC,RC*RC]. Such balls 
+%   do not lie outside the hull of their parent 2-simplexes.
 
-%   Darren Engwirda : 2014 --
-%   Email           : engwirda@mit.edu
-%   Last updated    : 29/11/2014
+%   Darren Engwirda : 2014--2019
+%   Email           : darren.engwirda@columbia.edu
+%   Last updated    : 21/05/2019
 
 %----------------------------------------- calc. circumballs
-    cc = triaball2(pp,tt);
+    cc = triaball2(pp,pw,tt);
+    
 %------------------------ replace with face-balls if smaller
     cc = miniface2(cc,pp(tt(:,1),:), ...
                       pp(tt(:,2),:), ...
@@ -39,3 +40,6 @@ function cc = miniface2(cc,pi,pj,pk)
     cc(ki,1:3) = bc(ki,:);
     cc(ki,  4) = br(ki,:);
 end
+
+
+

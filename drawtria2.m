@@ -5,7 +5,7 @@ function drawtria2(pp,tt,varargin)
 %   PJ,PK].
 
 %   Darren Engwirda : 2014 --
-%   Email           : engwirda@mit.edu
+%   Email           : darren.engwirda@columbia.edu
 %   Last updated    : 01/12/2014
 
     fc = [.95,.95,.55];
@@ -27,4 +27,6 @@ function drawtria2(pp,tt,varargin)
     if(~hs),hold off;end
     
 end
+
+
 

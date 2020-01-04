@@ -1,39 +1,166 @@
-function [cc] = triaball2(pp,tt)
-%TRIABALL2 calc. the circumballs associated with a 2-simplex
-%triangulation embedded in R^3.
-%   [CC] = TRIABALL2(PP,TT) returns the circumscribing balls
-%   associated with the triangles in [PP,TT], such that CC = 
-%   [XC,YC,ZC,RC*RC].
+function [bb] = triaball2(pp,pw,tt)
+%TRIABALL2 calc. the ortho-balls associated with a 2-simplex
+%triangulation embedded in R^2 or R^3.
+%   [BB] = TRIABALL2(PP,PW,TT) returns the set of pwr-balls
+%   associated with the triangles in [PP,TT], such that BB = 
+%   [XC,YC,RC.^2]. PW is a vector of vertex weights.
 
-%   Darren Engwirda : 2014 --
-%   Email           : engwirda@mit.edu
-%   Last updated    : 15/12/2014
+%   Darren Engwirda : 2017 --
+%   Email           : darren.engwirda@columbia.edu
+%   Last updated    : 21/05/2019
 
-    cc = zeros(size(tt,1),4);
-    rv = zeros(size(tt,1),3);
-%------------------------------------------------- tria edge
-    ab = pp(tt(:,1),:)-pp(tt(:,2),:);
-    ac = pp(tt(:,1),:)-pp(tt(:,3),:);
-%------------------------------------------------- tria norm
-    nv = cross(ab,ac);
-%--------------------------------------- setup coeff. vector
-    rv(:,1) = sum(pp(tt(:,1),:).^2,2) - ...
-              sum(pp(tt(:,2),:).^2,2) ;
-    rv(:,2) = sum(pp(tt(:,1),:).^2,2) - ...
-              sum(pp(tt(:,3),:).^2,2) ;
-    rv(:,3) = sum(pp(tt(:,1),:).*nv,2);
-    rv = rv';
-%--------------------------------------- calc. circum-centre    
-    aa = zeros(3,3,size(tt,1));
-    aa(1,:,:) = +2.*ab';
-    aa(2,:,:) = +2.*ac';
-    aa(3,:,:) = +1.*nv';
-
-    cc(:,1:3) = blocksolve(aa,rv)';
-%--------------------------------------- calc. circum-radius
-    cc(:,  4) =(sum((cc(:,1:3)-pp(tt(:,1),:)).^2,2) + ...
-                sum((cc(:,1:3)-pp(tt(:,2),:)).^2,2) + ...
-                sum((cc(:,1:3)-pp(tt(:,3),:)).^2,2))/+3.; 
+%---------------------------------------------- basic checks    
+    if ( ~isnumeric(pp) || ...
+         ~isnumeric(pw) || ...
+         ~isnumeric(tt) )
+        error('triaball2:incorrectInputClass' , ...
+            'Incorrect input class.');
+    end
     
+%---------------------------------------------- basic checks
+    if (ndims(pp) ~= +2 || ...
+        ndims(pw) ~= +2 || ...
+        ndims(tt) ~= +2 )
+        error('triaball2:incorrectDimensions' , ...
+            'Incorrect input dimensions.');
+    end
+    
+    if (size(pp,2) < +2 || ...
+            size(pp,1)~= size(pw,1) || ...
+                size(tt,2) < +3 )
+        error('triaball2:incorrectDimensions' , ...
+            'Incorrect input dimensions.');
+    end
+
+    switch (size(pp,2))
+        case +2
+    %-------------------------------------------- alloc work
+        AA = zeros(2,2,size(tt,1)) ;
+        Rv = zeros(2,1,size(tt,1)) ;
+        bb = zeros(size(tt,1),3,1) ;
+        
+    %-------------------------------------------- lhs matrix     
+        ab = pp(tt(:,2),:)-pp(tt(:,1),:);
+        ac = pp(tt(:,3),:)-pp(tt(:,1),:);
+        
+        AA(1,1,:) = ab(:,1) * +2.0 ;
+        AA(1,2,:) = ab(:,2) * +2.0 ;      
+        AA(2,1,:) = ac(:,1) * +2.0 ;
+        AA(2,2,:) = ac(:,2) * +2.0 ;
+       
+    %-------------------------------------------- rhs vector    
+        Rv(1,1,:) = sum(ab.*ab,2) ...
+        - ( pw(tt(:,2)) - pw(tt(:,1)) ) ;
+        
+        Rv(2,1,:) = sum(ac.*ac,2) ...
+        - ( pw(tt(:,3)) - pw(tt(:,1)) ) ;
+        
+    %-------------------------------------------- solve sys.
+       [II,dd] = invert2x2(AA) ;
+        
+        bb(:,1) = ( ...
+            II(1,1,:).*Rv(1,1,:) + ...
+            II(1,2,:).*Rv(2,1,:) ) ...
+            ./ dd ;
+                
+        bb(:,2) = ( ...
+            II(2,1,:).*Rv(1,1,:) + ...
+            II(2,2,:).*Rv(2,1,:) ) ...
+            ./ dd ;
+          
+        bb(:,1:2) = ...
+            pp(tt(:,1),:) + bb(:,1:2) ;
+            
+    %-------------------------------------------- mean radii
+        r1 = sum( ...
+        (bb(:,1:2)-pp(tt(:,1),:)).^2,2) ;
+        r2 = sum( ...
+        (bb(:,1:2)-pp(tt(:,2),:)).^2,2) ;
+        r3 = sum( ...
+        (bb(:,1:2)-pp(tt(:,3),:)).^2,2) ;
+
+        r1 = r1 - pw(tt(:,1));
+        r2 = r2 - pw(tt(:,2));
+        r3 = r3 - pw(tt(:,3));
+
+        bb(:,3) = ( r1+r2+r3 ) / +3.0 ;
+
+        case +3
+    %-------------------------------------------- alloc work
+        AA = zeros(3,3,size(tt,1)) ;
+        Rv = zeros(3,1,size(tt,1)) ;
+        bb = zeros(size(tt,1),4,1) ;
+        
+    %-------------------------------------------- lhs matrix     
+        ab = pp(tt(:,2),:)-pp(tt(:,1),:);
+        ac = pp(tt(:,3),:)-pp(tt(:,1),:);
+        
+        AA(1,1,:) = ab(:,1) * +2.0 ;
+        AA(1,2,:) = ab(:,2) * +2.0 ;
+        AA(1,3,:) = ab(:,3) * +2.0 ;      
+        AA(2,1,:) = ac(:,1) * +2.0 ;
+        AA(2,2,:) = ac(:,2) * +2.0 ;
+        AA(2,3,:) = ac(:,3) * +2.0 ;
+        
+        nv = cross(ab,ac) ;
+        
+        AA(3,1,:) = nv(:,1) * +1.0 ;
+        AA(3,2,:) = nv(:,2) * +1.0 ;
+        AA(3,3,:) = nv(:,3) * +1.0 ;
+        
+    %-------------------------------------------- rhs vector    
+        Rv(1,1,:) = sum(ab.*ab,2) ...
+        - ( pw(tt(:,2)) - pw(tt(:,1)) ) ;
+        
+        Rv(2,1,:) = sum(ac.*ac,2) ...
+        - ( pw(tt(:,3)) - pw(tt(:,1)) ) ;
+        
+    %-------------------------------------------- solve sys.
+       [II,dd] = invert3x3(AA) ;
+        
+        bb(:,1) = ( ...
+            II(1,1,:).*Rv(1,1,:) + ...
+            II(1,2,:).*Rv(2,1,:) + ...
+            II(1,3,:).*Rv(3,1,:) ) ...
+            ./ dd ;
+                
+        bb(:,2) = ( ...
+            II(2,1,:).*Rv(1,1,:) + ...
+            II(2,2,:).*Rv(2,1,:) + ...
+            II(2,3,:).*Rv(3,1,:) ) ...
+            ./ dd ;
+            
+        bb(:,3) = ( ...
+            II(3,1,:).*Rv(1,1,:) + ...
+            II(3,2,:).*Rv(2,1,:) + ...
+            II(3,3,:).*Rv(3,1,:) ) ...
+            ./ dd ;
+          
+        bb(:,1:3) = ...
+            pp(tt(:,1),:) + bb(:,1:3) ;
+                
+    %-------------------------------------------- mean radii
+        r1 = sum( ...
+        (bb(:,1:3)-pp(tt(:,1),:)).^2,2) ;
+        r2 = sum( ...
+        (bb(:,1:3)-pp(tt(:,2),:)).^2,2) ;
+        r3 = sum( ...
+        (bb(:,1:3)-pp(tt(:,3),:)).^2,2) ;
+
+        r1 = r1 - pw(tt(:,1));
+        r2 = r2 - pw(tt(:,2));
+        r3 = r3 - pw(tt(:,3));
+
+        bb(:,4) = ( r1+r2+r3 ) / +3.0 ;
+        
+    otherwise
+
+    error('triaball2:unsupportedDimension' , ...
+            'Dimension not supported.') ;
+    
+    end
+
 end
+
+
 

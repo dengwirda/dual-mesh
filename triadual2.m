@@ -6,7 +6,7 @@ function [tp,tv] = triadual2(cp,ce,ev)
 %   TV(TP(CI,1):TP(CI,2),:).
 
 %   Darren Engwirda : 2014 --
-%   Email           : engwirda@mit.edu
+%   Email           : darren.engwirda@columbia.edu
 %   Last updated    : 29/11/2014
 
 %--------------------------------------- count tria indexing
@@ -40,3 +40,6 @@ function [tp,tv] = triadual2(cp,ce,ev)
     tv = tv(1:nt-1,:);
 
 end
+
+
+

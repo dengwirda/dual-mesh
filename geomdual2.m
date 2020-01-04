@@ -5,7 +5,7 @@ function [pc,ac] = geomdual2(cp,ce,pv,ev)
 %   MAKEDUAL2.
 
 %   Darren Engwirda : 2014 --
-%   Email           : engwirda@mit.edu
+%   Email           : darren.engwirda@columbia.edu
 %   Last updated    : 29/11/2014
 
 %----------------------------- alloc. cell areas/barycentres
@@ -34,3 +34,6 @@ function [pc,ac] = geomdual2(cp,ce,pv,ev)
     end
 
 end
+
+
+

@@ -1,4 +1,4 @@
-function [cp,ce,pv,ev] = makedual2(pp,tt,varargin)
+function [cp,ce,pv,ev] = makedual2(PP,tt,varargin)
 %MAKEDUAL2 make dual complex for a conforming 2-simplex tri-
 %angulation embedded in R^3.
 %   [CP,CE,PV,EV] = MAKEDUAL2(PP,TT) returns the dual mesh
@@ -65,34 +65,52 @@ function [cp,ce,pv,ev] = makedual2(pp,tt,varargin)
 %   "well-centred". Dual cells are "clipped" about non-mani-
 %   fold or constrained edges.
 
-%   Darren Engwirda : 2014 --
-%   Email           : engwirda@mit.edu
-%   Last updated    : 17/12/2014
+%   Darren Engwirda : 2014--2019
+%   Email           : darren.engwirda@columbuia.edu
+%   Last updated    : 21/05/2019
 
 %----------------------------------- extract optional inputs
     ec = []; op = [];
     if (nargin < +2 || nargin > +4)
-        error('makedual:incorrectNumInputs','Incorrect number of inputs. ');
+        error('makedual:incorrectNumInputs', ...
+            'Incorrect number of inputs. ');
     end
     if (nargin >= +3), ec = varargin{1}; end
     if (nargin >= +4), op = varargin{2}; end
+%---------------------------------------------- unpack point
+    if (iscell(PP))
+        pp = PP{1}; 
+        pw = PP{2};
+    else
+        pp = PP;
+        pw = zeros(size(pp,1), 1) ;
+    end
 %---------------------------------------------- basic checks    
-    if (~isfloat(pp) || ...
+    if (~isfloat(pp) || ~isfloat(pw) || ...
        (~isempty(tt) && ~isnumeric(tt)) || ...
        (~isempty(ec) && ~isnumeric(ec)) || ...
        (~isempty(op) && ~isstruct(op))) 
-        error('makedual:incorrectInputClass','Incorrect input class.') ;
+        error('makedual:incorrectInputClass', ...
+            'Incorrect input class.') ;
     end
 %---------------------------------------------- basic checks
-    if (ndims(pp) ~= +2 || size(pp,2) < +2 || size(pp,2) > +3)
-        error('makedual:incorrectDimensions','Incorrect input dimensions.');
+    if (ndims(pp) ~= +2 || size(pp,2)  < +2 || size(pp,2) > +3)
+        error('makedual:incorrectDimensions', ...
+            'Incorrect input dimensions.') ;
+    end
+    if (ndims(pw) ~= +2 || size(pw,2) ~= +1 || ...
+             size(pp,1) ~= size(pw,1) )
+        error('makedual:incorrectDimensions', ...
+            'Incorrect input dimensions.') ;
     end
     if (ndims(tt) ~= +2 || size(tt,2) ~= +3)
-        error('makedual:incorrectDimensions','Incorrect input dimensions.');
+        error('makedual:incorrectDimensions', ...
+            'Incorrect input dimensions.') ;
     end
     if (~isempty(ec))
     if (ndims(ec) ~= +2 || size(ec,2) ~= +2)
-        error('makedual:incorrectDimensions','Incorrect input dimensions.');
+        error('makedual:incorrectDimensions', ...
+            'Incorrect input dimensions.') ;
     end
     end
 %------------------ lift R^2 inputs onto the xy-plane in R^3
@@ -103,11 +121,13 @@ function [cp,ce,pv,ev] = makedual2(pp,tt,varargin)
     if (~isstruct(op))
         op.etol = +1.e-008;
         op.atol = +1./+2. ;
+        op.kind = 'orthogonal';
     else
     %--------------------------------- bound merge tolerance
     if (isfield(op,'etol'))
         if (op.etol < +.0 || op.etol > +1.)
-            error('makedual:invalidInputs','Invalid options.');
+            error('makedual:invalidInputs', ...
+                'Invalid options structure.') ;
         end
     else
         op.etol = +1.e-008;
@@ -115,46 +135,75 @@ function [cp,ce,pv,ev] = makedual2(pp,tt,varargin)
     %--------------------------------- bound angle tolerance
     if (isfield(op,'atol'))
         if (op.atol < -1. || op.atol > +1.)
-            error('makedual:invalidInputs','Invalid options.');
+            error('makedual:invalidInputs', ...
+                'Invalid options structure.') ;
         end
     else
         op.atol = +1./+2. ;
+    end
+    %--------------------------------- manage dual-mesh kind
+    if (isfield(op,'kind'))
+        op.kind = lower(op.kind);
+        if (~strcmp(op.kind,'orthogonal') && ...
+            ~strcmp(op.kind,'centroidal') )
+            error('makedual:invalidInputs', ...
+                'Invalid options structure.') ;
+        end
+    else
+        op.kind = 'orthogonal';
     end
     end
 %---------------------------------- check for valid indexing
     if (~isempty(tt))
     if ( min(min(tt)) < +1 || max(max(tt)) > size(pp,1))
-        error('makedual:invalidTopology','Invalid triangulation. ');
+        error('makedual:invalidTopology', ...
+            'Invalid indexes in triangulation. ') ;
     end
     end
     if (~isempty(ec))
     if ( min(min(ec)) < +1 || max(max(ec)) > size(pp,1))
-        error('makedual:invalidTopology','Invalid constraint set.');
+        error('makedual:invalidTopology', ...
+            'Invalid indexes in constraint set.') ;
     end
     end
  
     [np] = size(pp,1);
+    [nd] = size(pp,2);
     [nt] = size(tt,1);
 %------------------------------------ form tria connectivity
     [ee,te,ep,et] = triaconn2(tt);
 %------------------------------------ mark nonmanifold edges      
     [ke] = markedge(ee,ep,et,ec,pp,tt,op);
 %------------------------------------ form tria circum-balls
-    [cc] = miniball2(pp,tt);
-%-------------------------------------------- edge midpoints    
-    [pm] = (pp(ee(:,1),:) + ...
-            pp(ee(:,2),:))*+.5;
-%-------------------------------------------- node positions
-    [pv] = [pp; cc(:,1:3); pm];
+    if (strcmp(op.kind,'orthogonal'))
+       [c2] = miniball2(pp,pw,tt);
+    else
+        c2 = zeros(size(tt,1),nd);
+        c2 = c2+pp(tt(:,1),:);
+        c2 = c2+pp(tt(:,2),:);
+        c2 = c2+pp(tt(:,3),:);
+        c2 = c2 * (1.0 / 3.0);
+    end
+%------------------------------------ form edge circum-balls    
+    if (strcmp(op.kind,'orthogonal'))
+       [c1] = miniball1(pp,pw,ee);
+    else
+        c1 = zeros(size(ee,1),nd);
+        c1 = c1+pp(ee(:,1),:);
+        c1 = c1+pp(ee(:,2),:);
+        c1 = c1 * (1.0 / 2.0);
+    end
+%-------------------------------------- all vertex positions
+    [pv] = [pp; c2(:,1:3); c1(:,1:3)];
 %-------------------------------- make edges in dual complex
-    [ev] = makeedge(ee,ep,et,ke,pv,np,nt);
+    [ev] = makeedge(ee,ep,et,ke,pv,np,nt,op);
 %-------------------------------------- remove "short" edges
     [pv,ev] = healedge(pv,ev,op);
 %-------------------------------------- remove un-used nodes
     [pv,ev] = healnode(pv,ev,np);
 %-------------------------------- make cells in dual complex
-    [cp,ce] = clipcell(ev)  ;
-%--------------------------------------- dump extra indexing
+    [cp,ce] = clipcell(ev);
+%-------------------------------------- prune extra indexing
     [ev] = ev(:,1:2);
    
 end
@@ -241,7 +290,7 @@ function [ke] = markedge(ee,ep,et,ec,pp,tt,op)
 
 end
 
-function [ev] = makeedge(ee,ep,et,ke,pv,np,nt)
+function [ev] = makeedge(ee,ep,et,ke,pv,np,nt,op)
 %% assemble edge segments in cells od dual complex
 
     nn = ep(:,2)-ep(:,1)+1 ;
@@ -287,7 +336,8 @@ function [ev] = makeedge(ee,ep,et,ke,pv,np,nt)
         %----------------------- deal with segment selection    
             if (n1(1)*n2(1) + ...
                 n1(2)*n2(2) + ...
-                n1(3)*n2(3)>=+.0)
+                n1(3)*n2(3)>=+.0 && ...
+            strcmp(op.kind,'orthogonal') )
         %------------------------ add dual tria-tria segment
             ne = ne+1;
             ev(ne,1) = ti ;
@@ -516,4 +566,6 @@ function [cp,ce] = clipcell(ev)
     ce = ce(1:ne-1,:) ;
     
 end
+
+
 

@@ -8,8 +8,13 @@ function demodual2(id)
 %   See also MAKEDUAL2, GEOMDUAL2, DRAWDUAL2
 
 %   Darren Engwirda : 2014 --
-%   Email           : engwirda@mit.edu
+%   Email           : darren.engwirda@columbia.edu
 %   Last updated    : 21/12/2014
+
+    filename = mfilename('fullpath') ;
+    filepath = fileparts( filename ) ;
+    
+    addpath([filepath,'/msh']) ;
 
 %------------------------------------------------- call demo
     switch (id)
@@ -33,22 +38,11 @@ function demo1
 '   es are useful for a variety of numerical techniques,   \n'...
 '   including the finite-volume method. \n\n']) ;
  
-    ffid = fopen('test/airfoil.node_2d','r');
-    data = fscanf(ffid,'%e,%e,%i \r\n');
-    fclose(ffid);
-    
-    pp = [data(1:3:end), ...
-          data(2:3:end)] ;
-      
-    ffid = fopen('test/airfoil.tria_2d','r');
-    data = fscanf(ffid,'%u,%u,%u,%u \r\n');
-    fclose(ffid);
-    
-    tt = [data(1:4:end), ...
-          data(2:4:end), ...
-          data(3:4:end)] ;
-    tt = tt+1;
-    
+    ms = loadmsh('dat/airfoil.msh');
+
+    pp = ms.point.coord(:,1:2);
+    tt = ms.tria3.index(:,1:3);
+
    [cp,ce,pv,ev] = makedual2(pp,tt);
 
     figure;
@@ -72,24 +66,10 @@ function demo2
 '   ducing dual complexes that are restricted to the under- \n'...
 '   lying triangulated surface. \n\n']);
  
-    ffid = fopen('test/bunny.node_3d','r');
-    data = fscanf(ffid,'%e,%e,%e,%i,%e \r\n');
-    fclose(ffid);
-    
-    pp = [data(1:5:end), ...
-          data(2:5:end), ...
-          data(3:5:end)] ;
-      
-    pp = pp(:,[1,3,2]) ;
-      
-    ffid = fopen('test/bunny.tria_3d','r');
-    data = fscanf(ffid,'%u,%u,%u,%i \r\n');
-    fclose(ffid);
-    
-    tt = [data(1:4:end), ...
-          data(2:4:end), ...
-          data(3:4:end)] ;
-    tt = tt+1;
+    ms = loadmsh('dat/bunny.msh');
+
+    pp = ms.point.coord(:,1:3);
+    tt = ms.tria3.index(:,1:3);
 
    [cp,ce,pv,ev] = makedual2(pp,tt);
 
@@ -119,22 +99,10 @@ function demo3
 '   Delaunay. Such behaviour facilitates robust computatio- \n'...
 '   ns on highly aniostropic triangulations. \n\n']);
 
-    ffid = fopen('test/wood.node_3d','r');
-    data = fscanf(ffid,'%e,%e,%e,%i,%e \r\n');
-    fclose(ffid);
-    
-    pp = [data(1:5:end), ...
-          data(2:5:end), ...
-          data(3:5:end)] ;
-      
-    ffid = fopen('test/wood.tria_3d','r');
-    data = fscanf(ffid,'%u,%u,%u,%i \r\n');
-    fclose(ffid);
-    
-    tt = [data(1:4:end), ...
-          data(2:4:end), ...
-          data(3:4:end)] ;
-    tt = tt+1;
+    ms = loadmsh('dat/thinker.msh');
+
+    pp = ms.point.coord(:,1:3);
+    tt = ms.tria3.index(:,1:3);
 
    [cp,ce,pv,ev] = makedual2(pp,tt);
 
@@ -161,22 +129,11 @@ function demo4
 '   fold geometry, splitting dual cells about non-manifold  \n'...
 '   features. \n\n']);
 
-    ffid = fopen('test/minimale.node_3d','r');
-    data = fscanf(ffid,'%e,%e,%e \r\n');
-    fclose(ffid);
-    
-    pp = [data(1:3:end), ...
-          data(2:3:end), ...
-          data(3:3:end)] ;
-      
-    ffid = fopen('test/minimale.tria_3d','r');
-    data = fscanf(ffid,'%u,%u,%u \r\n');
-    fclose(ffid);
-    
-    tt = [data(1:3:end), ...
-          data(2:3:end), ...
-          data(3:3:end)] ;
-      
+    ms = loadmsh('dat/curve.msh');
+
+    pp = ms.point.coord(:,1:3);
+    tt = ms.tria3.index(:,1:3);
+
     [cp,ce,pv,ev] = makedual2(pp,tt);
 
     figure;
@@ -203,21 +160,10 @@ function demo5
 '   tion of geometric properties, such as cell barycentres  \n'...
 '   and surface areas. \n\n']);
 
-    ffid = fopen('test/lake.node_2d','r');
-    data = fscanf(ffid,'%e,%e,%i \r\n');
-    fclose(ffid);
-    
-    pp = [data(1:3:end), ...
-          data(2:3:end)] ;
-      
-    ffid = fopen('test/lake.tria_2d','r');
-    data = fscanf(ffid,'%u,%u,%u,%u \r\n');
-    fclose(ffid);
-    
-    tt = [data(1:4:end), ...
-          data(2:4:end), ...
-          data(3:4:end)] ;
-    tt = tt+1;
+    ms = loadmsh('dat/lakes.msh');
+
+    pp = ms.point.coord(:,1:2);
+    tt = ms.tria3.index(:,1:3);
 
    [cp,ce,pv,ev] = makedual2(pp,tt);
 

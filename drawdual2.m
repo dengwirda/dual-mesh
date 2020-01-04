@@ -4,7 +4,7 @@ function drawdual2(cp,ce,pv,ev,varargin)
 %   MAKEDUAL2.
 
 %   Darren Engwirda : 2014 --
-%   Email           : engwirda@mit.edu
+%   Email           : darren.engwirda@columbia.edu
 %   Last updated    : 10/12/2014
 
     fc = [.95,.95,.55];
@@ -43,7 +43,8 @@ function drawdual2(cp,ce,pv,ev,varargin)
     patch('faces',tv,'vertices',pv,'facevertexcdata',tc,...
         'facecolor','flat','edgecolor','none');
     end
-    patch('faces',ev(in==+1,:),'vertices',pv,'facecolor','none','edgecolor',ec);
+    patch('faces',ev(in==+1,:),'vertices',pv,'facecolor','none', ...
+        'edgecolor',ec,'linewidth',+.500);
 %------------------------------------------- push hold state
     if(~hs),hold off;end
     

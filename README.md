@@ -2,11 +2,11 @@
 
 A set of <a href="http://www.mathworks.com">`MATLAB`</a> / <a href="https://www.gnu.org/software/octave">`OCTAVE`</a> routines to construct Voronoi-type dual meshes given 2-simplex triangulations embedded in `R^3`.
 
+`DUALMESH` is a toolbox of mesh processing routines that allow the construction of "dual" meshes based on underlying simplicial triangulations. Support is provided for various planar and surface triangulation types, including non-Delaunay and non-manifold types.
+
 <p align="center">
   <img src = "../master/img/bunny.jpg">
 </p>
-
-`DUALMESH` is a toolbox of mesh processing routines that allow the construction of "dual" meshes based on underlying simplicial triangulations. Support is provided for various planar and surface triangulation types, including non-Delaunay and non-manifold types.
 
 `DUALMESH` makes use of a "generalised" dual-mesh paradigm, guaranteeing that dual cells are "star-shaped" w.r.t. their associated generating vertices, even when mesh quality is low, for highly curved surface discretisations or non-Delaunay inputs. This generalised dual mesh is equivalent to the conventional Voronoi diagram when the input is a so-called "well-centred" Delaunay triangulation.
 
